@@ -12,32 +12,20 @@ namespace EmailBot
         public Form1()
         {
             InitializeComponent();
-            //العنوان
-            textBox2.Text = @"Coop Trainig";
-           //نص الرسالة
-            textBox3.Text = @"Dear Recruitment Team,
+
+
+            //نص الرسالة
+            textBox3.Text = @"Dear Talent Acquisition Team's,
 
 I hope this message finds you well.
-               
-My name is Fahad , a senior Software Engineering student at University,
-expected to graduate in Summer 2025. As part of my graduation requirements,
-I am seeking a Cooperative Training (Co-op) opportunity starting June 15, 2025, 
-for a duration of 6 months.
 
-Best regards,
-Fahad  
-Software Engineering Student – name University
-Saudi Arabia
-+966 55 698 8335
-Fahad@gmail.com
-LinkedIn: https://sa.linkedin.com/in/fahad-alfehaid-94aab823b
-GPA: ? / 5 (Excellent)";
+
+";
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private async void button1_Click(object sender, EventArgs e)
         {
             var emails = textBox1.Text
-                //هنا راح يصفي الايميلات 
                 .Split(new[] { "\r\n", "\n", ",", " ", "–", "-" }, StringSplitOptions.RemoveEmptyEntries)
                 .Select(line => line.Trim())
                 .Where(line => line.Contains("@") && line.Contains("."))
@@ -45,39 +33,54 @@ GPA: ? / 5 (Excellent)";
                 .ToList();
 
             string subject = textBox2.Text.Trim();
-            string body = textBox3.Text.Trim();
+            string bodyText = textBox3.Text.Trim().Replace("\n", "<br>"); // HTML body
 
-            string fromEmail = "your email@gmail.com"; 
-            string password = "your app password";   
+            string fromEmail = "yourEmail@gmail.com";
+            string password = "qyupfsjdx*******y"; // App Password
 
-            string attachmentPath = @"your CV path موقع السيرة الذاتيه";
+            string attachmentPath = @"C:\Users\Downloads\CV_Ab.pdf"; //Your Cv Path
 
-            SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587)
+            using SmtpClient smtp = new SmtpClient("smtp.gmail.com", 587)
             {
                 EnableSsl = true,
                 Credentials = new NetworkCredential(fromEmail, password)
             };
 
+            int count = 0;
             foreach (string email in emails)
             {
                 try
                 {
-                    MailMessage message = new MailMessage(fromEmail, email, subject, body);
-                    if (File.Exists(attachmentPath))
-                    {
-                        Attachment cv = new Attachment(attachmentPath);
-                        message.Attachments.Add(cv);
-                    }
+                    using MailMessage message = new MailMessage();
+                    message.From = new MailAddress(fromEmail, "Eng. Abd");// من وين مرسل عادي تكتب اسمك
+                    message.To.Add(email);
+                    message.Subject = subject;
+                    message.SubjectEncoding = System.Text.Encoding.UTF8;
 
-                    smtp.Send(message);
+                    message.Body = bodyText;
+                    message.IsBodyHtml = true;
+                    message.BodyEncoding = System.Text.Encoding.UTF8;
+
+                    message.ReplyToList.Add(new MailAddress(fromEmail));
+                    message.Headers.Add("X-Priority", "3"); // Normal priority
+
+                    if (File.Exists(attachmentPath))
+                        message.Attachments.Add(new Attachment(attachmentPath));
+
+                    await smtp.SendMailAsync(message);
+                    count++;
+                    this.Text = $"Sent {count}/{emails.Count}";
+
+                    await Task.Delay(3000); // ⏱️ تأخير 3 ثواني لتقليل احتمالية السبام
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error sending to {email}:\n{ex.Message}");
+                    MessageBox.Show($"❌ Failed to send to {email}:\n{ex.Message}");
                 }
             }
 
-            MessageBox.Show("Emails sent successfully.");
+            MessageBox.Show($"✅ Finished sending. Total sent: {count}/{emails.Count}");
+            this.Text = "EmailBot";
         }
     }
-}
+    }
